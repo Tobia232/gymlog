@@ -193,7 +193,7 @@ export default function Statistiche({ sessions }: Props) {
                 <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} />
                 <Tooltip
                   contentStyle={tooltipStyle}
-                  formatter={(v: number) => [`${v} kg`, 'Peso massimo']}
+                  formatter={(v) => [`${v} kg`, 'Peso massimo']}
                 />
                 <Line
                   type="monotone"
