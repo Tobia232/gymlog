@@ -13,6 +13,20 @@ function genId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
+function getLastRecord(name: string, sessions: WorkoutSession[]) {
+  const sorted = [...sessions].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
+  for (const s of sorted) {
+    const ex = s.exercises.find(e => e.name === name);
+    if (ex && ex.sets.some(set => set.weight > 0)) {
+      const best = ex.sets.reduce((b, set) => (set.weight > b.weight ? set : b), ex.sets[0]);
+      return { weight: best.weight, reps: best.reps, date: s.date };
+    }
+  }
+  return null;
+}
+
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('it-IT', {
     weekday: 'long',
@@ -241,6 +255,16 @@ export default function Diario({ sessions, setSessions, programs }: Props) {
                   <Trash2 size={16} />
                 </button>
               </div>
+
+              {(() => {
+                const last = getLastRecord(ex.name, sessions);
+                return last ? (
+                  <div className="last-record-hint">
+                    Ultima volta: <strong>{last.weight} kg × {last.reps} reps</strong>
+                    <span className="text-muted"> · {new Date(last.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</span>
+                  </div>
+                ) : null;
+              })()}
 
               <div className="technique-row">
                 <select

@@ -1,4 +1,4 @@
-name: Deploy GymLog to GitHub Pages
+name: Deploy GymLog
 
 on:
   push:
@@ -31,11 +31,23 @@ jobs:
 
       - run: npm run build
 
+      # Crea lo ZIP dell'app da distribuire
+      - name: Crea GymLog.zip
+        run: cd dist && zip -r ../GymLog.zip . && cd ..
+
+      # Prepara la cartella da deployare su GitHub Pages:
+      # solo la landing page + il file ZIP
+      - name: Prepara pagina di download
+        run: |
+          mkdir -p pages
+          cp landing/index.html pages/index.html
+          cp GymLog.zip pages/GymLog.zip
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: pages
 
       - uses: actions/deploy-pages@v4
         id: deployment

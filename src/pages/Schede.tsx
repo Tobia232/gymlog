@@ -12,13 +12,13 @@ function genId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
-type View = 'list' | 'detail' | 'new';
+type View = 'list' | 'detail' | 'new' | 'edit';
 
 export default function Schede({ programs, setPrograms }: Props) {
   const [view, setView] = useState<View>('list');
   const [selected, setSelected] = useState<WorkoutProgram | null>(null);
 
-  // ── new program state ───────────────────────────────────────────────────
+  // ── form state (shared by new + edit) ──────────────────────────────────
   const [pName, setPName] = useState('');
   const [pDesc, setPDesc] = useState('');
   const [days, setDays] = useState<ProgramDay[]>([]);
@@ -41,6 +41,29 @@ export default function Schede({ programs, setPrograms }: Props) {
     setDays([]);
     setShowAddDay(false);
     setView('new');
+  }
+
+  function openEdit(program: WorkoutProgram) {
+    setPName(program.name);
+    setPDesc(program.description ?? '');
+    // Deep-clone days so edits don't mutate the original
+    setDays(JSON.parse(JSON.stringify(program.days)));
+    setShowAddDay(false);
+    setSelected(program);
+    setView('edit');
+  }
+
+  function saveEdit() {
+    if (!selected) return;
+    const updated: WorkoutProgram = {
+      ...selected,
+      name: pName.trim() || 'Scheda',
+      description: pDesc.trim() || undefined,
+      days,
+    };
+    setPrograms(programs.map(p => (p.id === selected.id ? updated : p)));
+    setSelected(updated);
+    setView('detail');
   }
 
   function addDay() {
@@ -126,16 +149,17 @@ export default function Schede({ programs, setPrograms }: Props) {
     setView('list');
   }
 
-  // ── NEW PROGRAM VIEW ────────────────────────────────────────────────────
-  if (view === 'new') {
+  // ── NEW / EDIT PROGRAM VIEW (shared form) ──────────────────────────────
+  if (view === 'new' || view === 'edit') {
+    const isEdit = view === 'edit';
     return (
       <div className="page">
         <div className="page-header">
-          <button className="btn btn-ghost" onClick={() => setView('list')}>
+          <button className="btn btn-ghost" onClick={() => (isEdit ? setView('detail') : setView('list'))}>
             <X size={16} /> Annulla
           </button>
-          <h2 className="page-title">Nuova Scheda</h2>
-          <button className="btn btn-primary" onClick={saveProgram}>
+          <h2 className="page-title">{isEdit ? 'Modifica Scheda' : 'Nuova Scheda'}</h2>
+          <button className="btn btn-primary" onClick={isEdit ? saveEdit : saveProgram}>
             Salva
           </button>
         </div>
@@ -350,9 +374,14 @@ export default function Schede({ programs, setPrograms }: Props) {
           <button className="btn btn-ghost" onClick={() => setView('list')}>
             ← Indietro
           </button>
-          <button className="btn btn-danger" onClick={() => deleteProgram(selected.id)}>
-            <Trash2 size={16} />
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-outline" style={{ margin: 0 }} onClick={() => openEdit(selected)}>
+              Modifica
+            </button>
+            <button className="btn btn-danger" onClick={() => deleteProgram(selected.id)}>
+              <Trash2 size={16} />
+            </button>
+          </div>
         </div>
 
         <h2 style={{ marginBottom: 4 }}>{selected.name}</h2>
